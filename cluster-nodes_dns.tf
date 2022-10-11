@@ -8,8 +8,9 @@
 // }
 
 resource "mikrotik_dns_record" "node_dns_record" {
-  count   = "${var.node_count}"
-  name    = "${var.node_name[count.index]}.${var.cluster_domain}"
-  address = var.node_default_ip_address[count.index]
+  count   = var.node_count
+  name    = "${vsphere_virtual_machine.node[count.index].name}.${var.cluster_domain}"
+  address = vsphere_virtual_machine.node[count.index].default_ip_address
   ttl     = 60
 }
+
