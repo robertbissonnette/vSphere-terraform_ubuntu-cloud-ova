@@ -1,42 +1,36 @@
-provider "vsphere" {
-  user           = "${var.user}"
-  password       = "${var.password}"
-  vsphere_server = "${var.vsphere_server}"
-
-  allow_unverified_ssl = true
-}
 
 data "vsphere_datacenter" "dc" {
-  name = "${var.datacenter}"
+  name = "${var.vsphere_datacenter}"
 }
 
 data "vsphere_datastore" "datastore" {
-  name          = "${var.datastore}"
+  name          = "${var.vsphere_datastore}"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
 data "vsphere_resource_pool" "pool" {
-  name          = "${var.resource_pool}"
+  name          = "${var.vsphere_resource_pool}"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
 data "vsphere_network" "network" {
-  name          = "${var.network}"
+  name          = "${var.node_network}"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
 data "vsphere_virtual_machine" "template" {
-  name          = "${var.template}"
+  name          = "${var.node_template}"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
-resource "vsphere_virtual_machine" "vm" {
-  name             = "${var.name}"
+resource "vsphere_virtual_machine" "node" {
+  count            = "${var.node_count}"
+  name             = "${var.cluster_name}-${count.index + 1}"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
 
-  num_cpus = 2
-  memory   = 1024
+  num_cpus = var.node_cpus
+  memory   = var.node_memory
   guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
 
   scsi_type = "${data.vsphere_virtual_machine.template.scsi_type}"
@@ -57,13 +51,14 @@ resource "vsphere_virtual_machine" "vm" {
     client_device = true
   }
 
-  vapp {
-    properties {
-      user-data = "${base64encode(file("cloud-init.yml"))}"
-    }
-  }
-
   clone {
     template_uuid = "${data.vsphere_virtual_machine.template.id}"
+  }
+
+  vapp {
+    properties = {
+      hostname = "${var.cluster_name}-${count.index + 1}"
+      user-data = base64gzip(file("${path.module}/cloud-init.yml"))
+    }
   }
 }
