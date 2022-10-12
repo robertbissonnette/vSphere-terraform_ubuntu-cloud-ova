@@ -16,6 +16,7 @@ variable "mikrotik_username" {
 }
 variable "mikrotik_password" {
     type = string
+    sensitive = true
 }
 variable "mikrotik_tls" {
     type = bool
@@ -37,6 +38,7 @@ variable "vsphere_user" {
 # vCenter / ESXi Password
 variable "vsphere_password" {
     type = string
+    sensitive = true
 }
 # vCenter / ESXi Endpoint
 variable "vsphere_server"{
